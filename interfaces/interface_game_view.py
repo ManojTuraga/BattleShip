@@ -1,0 +1,16 @@
+import interface_headers as ihdrs
+from abc import ABC, abstractmethod
+
+class GameViewInterface( ABC ):
+    @abstractmethod
+    def __init__( self ):
+        raise AssertionError( "Initialization method not implemented" )
+    
+    # Update interface functions when function signatures are made
+    # see the interface header file for more info. Every event
+    # should have a function that corresponds to it
+    # TODO Manoj: If going CLI, don't quite know what the function
+    # signatures need yet, feel free to figure these out
+    @abstractmethod
+    def draw_grid( self, grid : ihdrs.GameBoardType  ) -> None:
+        raise AssertionError( "Draw Grid Function not implemented" )
