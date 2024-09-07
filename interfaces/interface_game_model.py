@@ -7,7 +7,6 @@ else:
 from abc import ABC, abstractmethod
 
 class GameModelInterface( ABC ):
-    @abstractmethod
     def __init__( self ) -> None:
         raise AssertionError( "Initialization method not implemented" )
     

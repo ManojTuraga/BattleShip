@@ -7,7 +7,6 @@ else:
 from abc import ABC, abstractmethod
 
 class GameViewInterface( ABC ):
-    @abstractmethod
     def __init__( self ):
         raise AssertionError( "Initialization method not implemented" )
     
