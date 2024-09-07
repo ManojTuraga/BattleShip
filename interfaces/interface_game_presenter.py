@@ -1,6 +1,11 @@
-import interface_headers as ihdrs
+if __name__ == "__main__":
+    import interface_headers as ihdrs
+    from interface_game_view import GameViewInterface
 
-from interface_game_view import GameViewInterface
+else:
+    import interfaces.interface_headers as ihdrs
+    from interfaces.interface_game_view import GameViewInterface
+
 from abc import ABC, abstractmethod
 
 class GamePresenterInterface( ABC ):

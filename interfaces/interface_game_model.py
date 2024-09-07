@@ -1,4 +1,9 @@
-import interface_headers as ihdrs
+if __name__ == "__main__":
+    import interface_headers as ihdrs
+
+else:
+    import interfaces.interface_headers as ihdrs
+
 from abc import ABC, abstractmethod
 
 class GameModelInterface( ABC ):

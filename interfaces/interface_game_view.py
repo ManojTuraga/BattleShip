@@ -1,10 +1,19 @@
-import interface_headers as ihdrs
+if __name__ == "__main__":
+    import interface_headers as ihdrs
+
+else:
+    import interfaces.interface_headers as ihdrs
+    
 from abc import ABC, abstractmethod
 
 class GameViewInterface( ABC ):
     @abstractmethod
     def __init__( self ):
         raise AssertionError( "Initialization method not implemented" )
+    
+    @abstractmethod
+    def draw_start_page( self ):
+        raise AssertionError( "Draw Start Page function not implemented" )
     
     # Update interface functions when function signatures are made
     # see the interface header file for more info. Every event
