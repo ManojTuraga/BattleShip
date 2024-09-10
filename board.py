@@ -160,3 +160,56 @@ class Board:
             for cell in row:
                 cell.cellHit = True
             
+
+    #a function to shoot at a location on the map. It will process destroying and ending the game if needed.
+    #it will return a string message of what events occurred, as that may be needed, and a bool of if the game is over or not.
+    #True means game over
+    #False does not
+    def hitCell(self, x=0, y=0):
+        #first, we ensure that the cell is on the board
+        #if not, "miss" and the game goes on
+        if not self.isValidLocation(x=x, y=y):
+            return "That location is not on the Board. Miss!", False
+
+        #next, we see if that cell has already been hit.
+        #if so, alert that it already has been hit, and the game will not end if it has
+        #not ended by this point already
+        if self.board[y][x].cellHit:
+            return "That cell has already been shot! (Miss, technically.)", False
+        
+        #now, if that location has no boat, update they board and return that message
+        if not self.board[y][x].hasShip:
+            #update the map
+            self.board[y][x].cellHit = True
+            self.board[y][x].uncovered = True
+            return "You hit nothing. Miss!", False
+        
+        #You hit something. Make sure though.
+        if self.board[y][x].hasShip:
+            #the first thing is to update the map
+            self.board[y][x].cellHit = True
+            self.board[y][x].uncovered = True
+
+            #next, we need to decrement the ship HP thing
+            self.boatData[self.board[y][x].shipID] -= 1
+
+            #if the boat sunk, do something special
+            if self.boatData[self.board[y][x].shipID] == 0:
+                #now, see if all of the boats are sunk!
+                allSunk = True
+                for boatName, boatHP in self.boatData.items():
+                    if boatHP != 0:
+                        allSunk = False
+
+                if allSunk:
+                    #return the full message and True, the game is over
+                    return "You hit the " + self.board[y][x].callName + ". You sunk the " + self.board[y][x].shipID + "! You have sunk all enemy boats! Hit! You win!", True
+
+                #If not, just return that you sunk the ship.
+                return "You hit the " + self.board[y][x].callName + ". You sunk the " + self.board[y][x].shipID + "! Hit!", False
+
+            #if not, just return the hit.
+            return "You hit the " + self.board[y][x].callName + ". Hit!", False
+
+        #At this point, something has gone wrong. Return an error!
+        return "Something wents wrong. (Miss, technically.)"
