@@ -6,7 +6,18 @@ Contributer(s):
 
 Description: This module implements a network interaction for the host side
              of the game
+
+Inputs: Messages to Send
+Outputs: Messages to Receive
+
+Sources: DigitalOcean
 '''
+
+# Prefacing: The following code is an implementation of logic that is sourced
+# form https://www.digitalocean.com/community/tutorials/python-socket-programming-server-client.
+# This site details how one would use default python libraries and we just applied it to our
+# own project
+
 ################################################################################
 # Imports
 ################################################################################
