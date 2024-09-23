@@ -108,6 +108,10 @@ def main():
     function_parameters[ IH.VIEW_PARAM_IS_ERROR_STATE ] = False
     size = IH.MIN_NUM_OF_SHIPS
 
+    direction = "H"
+    row = 1
+    col = 'A'
+
     # This loop will continue executing until we have placed
     # all the ships onto the board
     while size <= number_of_ships:
@@ -116,6 +120,9 @@ def main():
         function_parameters[ IH.VIEW_PARAM_SIZE ] = size
         function_parameters[ IH.VIEW_PARAM_BOARD ] = model.get_visual_board( player_type )
         function_parameters[ IH.VIEW_PARAM_OPPONENT_BOARD ] = model.get_visual_board( oppenent_type )
+        function_parameters[ IH.VIEW_PARAM_DIRECTION ] = direction
+        function_parameters[ IH.VIEW_PARAM_ROW ] = row
+        function_parameters[ IH.VIEW_PARAM_COL ] = col
 
         # Trigger the presenter to display the configuration page.
         # On page exit, ensure to reset the error state so that
@@ -126,7 +133,9 @@ def main():
         # Obtain the direction of the ship's orientation and pack
         # the row and column into a coordinate structure
         direction = return_val[ IH.VIEW_PARAM_DIRECTION ]
-        start_coordinate = ( return_val[ IH.VIEW_PARAM_ROW ], return_val[ IH.VIEW_PARAM_COL ] )
+        row = return_val[ IH.VIEW_PARAM_ROW ]
+        col = return_val[ IH.VIEW_PARAM_COL ]
+        start_coordinate = ( row, col )
         
         # Convert the coordinate returned by the presenter
         # into system coordinates and compute the ending coordinate
@@ -151,7 +160,7 @@ def main():
         # If the presenter is not supposed to be in an
         # error state, we will update the model with the ship
         # selections
-        if not function_parameters[ IH.VIEW_PARAM_IS_ERROR_STATE ]:
+        if return_val[ IH.VIEW_PARAM_PLACE_SHIP ] and not function_parameters[ IH.VIEW_PARAM_IS_ERROR_STATE ]:
             for coord in boat_coords:
                 new_state = { IH.GAME_COORD_TYPE_ID_INDEX : size, IH.GAME_COORD_TYPE_STATE_INDEX: IH.CoordStateType.COORD_STATE_BASE }
                 model.update_coord( player_type, coord, new_state )
@@ -253,7 +262,13 @@ def main():
 
         else:
             # Trigger the presenter to display the attack page
+            attack = None
+
+            function_parameters[ IH.VIEW_PARAM_ROW ] = row
+            function_parameters[ IH.VIEW_PARAM_COL ] = col
             attack = presenter.trigger_view_event( IH.GameEventType.GAME_EVENT_MAKE_ATTACK, function_parameters )
+            row = attack[ IH.VIEW_PARAM_ROW ]
+            col = attack[ IH.VIEW_PARAM_COL ]
 
             # Remove any messages or errors that are currently
             # displayed on the page
@@ -265,42 +280,44 @@ def main():
 
             # The following block of code is only executed if the attack is valid
             if model.is_valid_coord( oppenent_type, attack_sys, IH.GameEventType.GAME_EVENT_MAKE_ATTACK ):
-                # Get a reference to the cell of the coordinate
-                # that you are attacking
-                cell = model.get_coord( oppenent_type, attack_sys )
-                
-                # Pack the attack's location into the a json
-                # structure and send it to the other player
-                data = dict()
-                data[ IH.VIEW_PARAM_ROW ] = attack_sys[ IH.ROW_INDEX ]
-                data[ IH.VIEW_PARAM_COL ] = attack_sys[ IH.COLUMN_INDEX ]
-                connection.send_message( json.dumps( data ) )
+                # Check if the user wants to place attack at this location
+                if attack[ IH.VIEW_PARAM_PLACE_SHIP ]:
+                    # Get a reference to the cell of the coordinate
+                    # that you are attacking
+                    cell = model.get_coord( oppenent_type, attack_sys )
+                    
+                    # Pack the attack's location into the a json
+                    # structure and send it to the other player
+                    data = dict()
+                    data[ IH.VIEW_PARAM_ROW ] = attack_sys[ IH.ROW_INDEX ]
+                    data[ IH.VIEW_PARAM_COL ] = attack_sys[ IH.COLUMN_INDEX ]
+                    connection.send_message( json.dumps( data ) )
 
-                # Obtain the response from the other player
-                response = json.loads( connection.wait_for_message() )
-                
-                model.update_coord( oppenent_type, attack_sys, { IH.GAME_COORD_TYPE_ID_INDEX: cell[ IH.GAME_COORD_TYPE_ID_INDEX ], 
-                                                                 IH.GAME_COORD_TYPE_STATE_INDEX: IH.CoordStateType( response[ IH.GAME_COORD_TYPE_STATE_INDEX ] ) } )
-                
-                # Update the state message to allow the presenter to display this
-                # message on the next page load
-                if IH.CoordStateType( response[ IH.GAME_COORD_TYPE_STATE_INDEX ] ) == IH.CoordStateType.COORD_STATE_HIT:
-                    function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = f"Your move at row={ attack[ IH.VIEW_PARAM_ROW ] }, col={ attack[ IH.VIEW_PARAM_COL ] } hit!"
+                    # Obtain the response from the other player
+                    response = json.loads( connection.wait_for_message() )
+                    
+                    model.update_coord( oppenent_type, attack_sys, { IH.GAME_COORD_TYPE_ID_INDEX: cell[ IH.GAME_COORD_TYPE_ID_INDEX ], 
+                                                                    IH.GAME_COORD_TYPE_STATE_INDEX: IH.CoordStateType( response[ IH.GAME_COORD_TYPE_STATE_INDEX ] ) } )
+                    
+                    # Update the state message to allow the presenter to display this
+                    # message on the next page load
+                    if IH.CoordStateType( response[ IH.GAME_COORD_TYPE_STATE_INDEX ] ) == IH.CoordStateType.COORD_STATE_HIT:
+                        function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = f"Your move at row={ attack[ IH.VIEW_PARAM_ROW ] }, col={ attack[ IH.VIEW_PARAM_COL ] } hit!"
 
-                else:
-                    function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = f"Your move at row={ attack[ IH.VIEW_PARAM_ROW ] }, col={ attack[ IH.VIEW_PARAM_COL ] } missed!"
+                    else:
+                        function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = f"Your move at row={ attack[ IH.VIEW_PARAM_ROW ] }, col={ attack[ IH.VIEW_PARAM_COL ] } missed!"
 
-                if response[ IH.VIEW_PARAM_SHIP_SUNK ]:
-                    function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] += f"\nShip of size { response[ IH.VIEW_PARAM_SIZE ] } was sunk!"
+                    if response[ IH.VIEW_PARAM_SHIP_SUNK ]:
+                        function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] += f"\nShip of size { response[ IH.VIEW_PARAM_SIZE ] } was sunk!"
 
-                # If the result of the attack ended the opponenet
-                # Indicate that you won the game!
-                if response[ IH.VIEW_PARAM_WIN ]:
-                    connection.close_connection()
-                    game_over = True
-                    win = True
+                    # If the result of the attack ended the opponenet
+                    # Indicate that you won the game!
+                    if response[ IH.VIEW_PARAM_WIN ]:
+                        connection.close_connection()
+                        game_over = True
+                        win = True
 
-                turn = oppenent_type
+                    turn = oppenent_type
 
             else:
                 # We are only in an error state if the
