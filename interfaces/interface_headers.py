@@ -29,6 +29,7 @@ VIEW_PARAM_DIRECTION = "DIRECTION"
 VIEW_PARAM_ROW = "ROW"
 VIEW_PARAM_COL = "COL"
 VIEW_PARAM_IS_ERROR_STATE = "IS_ERROR_STATE"
+VIEW_PARAM_PLACE_SHIP = "PLACE_SHIP"
 VIEW_PARAM_BOARD = "BOARD"
 VIEW_PARAM_OPPONENT_BOARD = "OPPONENT_BOARD"
 VIEW_PARAM_SIZE = "SIZE"
@@ -76,8 +77,8 @@ PLACEMENT_COL_TO_SYS_COL = { 'A' : 0,
                              'J' : 9 }
 
 # Invert the previous mappings to allow for fast reversal
-SYS_ROW_TO_PLACMENT_ROW = { val: key for key, val in PLACEMENT_ROW_TO_SYS_ROW.items() }
-SYS_COL_TO_PLACMENT_COL = { val: key for key, val in PLACEMENT_COL_TO_SYS_COL.items() }
+SYS_ROW_TO_PLACMENT_ROW = [ key for key in PLACEMENT_ROW_TO_SYS_ROW.keys() ]
+SYS_COL_TO_PLACMENT_COL = [ key for key in PLACEMENT_COL_TO_SYS_COL.keys() ]
 
 # Ensure that all possible mappings are accounted for
 assert( len( PLACEMENT_ROW_TO_SYS_ROW ) == NUMBER_OF_ROWS )
