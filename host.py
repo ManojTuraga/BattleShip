@@ -64,7 +64,6 @@ class Host( GameInteractionInterface ):
         
         # Store the client socket once a connection is established
         self.client_socket, _ = host_socket.accept()
-        print("found socket")
 
 
     def close_connection( self ) -> None:
