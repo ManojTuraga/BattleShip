@@ -22,6 +22,7 @@ Sources: DigitalOcean
 ################################################################################
 # Imports
 ################################################################################
+import time
 import socket
 import interfaces.interface_headers as IH
 from interfaces.interface_game_interaction import GameInteractionInterface
@@ -49,8 +50,14 @@ class Client( GameInteractionInterface ):
         """
         
         # Create a client socket and connect to the host socket
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.client_socket.connect((self.host, self.host_port))
+        while True:
+            try:
+                self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.client_socket.connect((self.host, self.host_port))
+                break
+            except:
+                # Keep trying if we hit a connection refused error
+                time.sleep(0.1)
     
     def close_connection( self ) -> None:
         """
