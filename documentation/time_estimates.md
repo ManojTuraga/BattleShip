@@ -4,6 +4,8 @@
 | Cursor Bug Fixing                            | 1-2 hours      | 16 minutes  | Evan - Thursday Sept 26 + Friday Sept 27 - 15 minutes                                 |
 | Custom Feature: Cursor tracker for input     | 3 hours        | ?           | ?                                                                                     |
 | Custom Feature: Grid movement using keyboard | 3 hours        | ?           | ?                                                                                     |
+| Add AI Option to menu selction               | 30 mins hours  | ?           | ?                                                                                     |
+| Add difficulty selection to menu             | 30 mins hours  | ?           | ?                                                                                     |
 | AI difficulty: Easy (random fire)            | 2 hours        | ?           | ?                                                                                     |
 | AI difficulty: Medium (strategy firing)      | 3 hours        | ?           | ?                                                                                     |
 | AI difficulty: Hard (cheating AI)            | 2 hours        | ?           | ?                                                                                     |
