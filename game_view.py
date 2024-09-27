@@ -90,7 +90,7 @@ class GameView( IGV.GameViewInterface ):
         """
 
         window_size = self._screen.getmaxyx()
-        return [int(window_size[0]/2 - size[0]/2), int(window_size[1]/2 - size[1]/2)]
+        return [int(window_size[1]/2 - size[0]/2), int(window_size[0]/2 - size[1]/2)]
     
     def draw_start_page( self, params : dict ) -> dict:
         """
@@ -122,14 +122,14 @@ class GameView( IGV.GameViewInterface ):
             # Print the welcome dialog
             welcome_message = "Welcome to Battleship!"
             # Show the welcome message in the middle of the screen
-            self._screen.addstr( 1, self.get_centered_position([len(welcome_message), 1])[0], welcome_message, curses.color_pair(TITLE_COLOR_PAIR) )
+            self.try_addstr( 1, self.get_centered_position([len(welcome_message), 1])[0], welcome_message, curses.color_pair(TITLE_COLOR_PAIR) )
             question = "Are you hosting or joining a game?"
-            self._screen.addstr( 3, self.get_centered_position([len(question), 1])[0], question )
+            self.try_addstr( 3, self.get_centered_position([len(question), 1])[0], question )
             selections = ["Host", "Join"]
             for [index, selection] in enumerate(selections):
                 message = f'{index}) {selection}'
                 color = SELECTED_COLOR_PAIR if player_type == index else NON_SELECTED_COLOR_PAIR
-                self._screen.addstr( 4 + index, self.get_centered_position([len(message), 1])[0], message, curses.color_pair(color) )
+                self.try_addstr( 4 + index, self.get_centered_position([len(message), 1])[0], message, curses.color_pair(color) )
 
             self._screen.refresh()
 
@@ -150,13 +150,13 @@ class GameView( IGV.GameViewInterface ):
             # Print the welcome dialog
             number_of_ships_message = "How many ships will you be playing with?"
             # Show the welcome message in the middle of the screen
-            self._screen.addstr( 1, self.get_centered_position([len(number_of_ships_message), 1])[0], number_of_ships_message, curses.color_pair(TITLE_COLOR_PAIR) )
+            self.try_addstr( 1, self.get_centered_position([len(number_of_ships_message), 1])[0], number_of_ships_message, curses.color_pair(TITLE_COLOR_PAIR) )
             ship_choices = 5
             centered_pos = self.get_centered_position([ship_choices*2, 1])
             for ship in range(5):
                 message = f'{ship+1}'
                 color = SELECTED_COLOR_PAIR if ship_index == ship else NON_SELECTED_COLOR_PAIR
-                self._screen.addstr( 3, centered_pos[0] + ship*2, message, curses.color_pair(color) )
+                self.try_addstr( 3, centered_pos[0] + ship*2, message, curses.color_pair(color) )
 
             self._screen.refresh()
 
@@ -221,7 +221,7 @@ class GameView( IGV.GameViewInterface ):
         # Print the title of this page and the
         # current state of the grids
         place_pieces = "Place pieces"
-        self._screen.addstr( 1, self.get_centered_position([len(place_pieces), 1])[0], place_pieces, curses.color_pair(TITLE_COLOR_PAIR) )
+        self.try_addstr( 1, self.get_centered_position([len(place_pieces), 1])[0], place_pieces, curses.color_pair(TITLE_COLOR_PAIR) )
 
         # Draw the grid
         self.draw_grid( params )
@@ -231,11 +231,11 @@ class GameView( IGV.GameViewInterface ):
         if direction == "H":
             for col_offset in range(size):
                 piece_position = self.get_your_board_tile_position(row_index, col_index - col_offset)
-                self._screen.addstr( piece_position[0], piece_position[1], "X", curses.color_pair(color) | curses.A_ITALIC )
+                self.try_addstr( piece_position[0], piece_position[1], "X", curses.color_pair(color) | curses.A_ITALIC )
         else:
             for row_offset in range(size):
                 piece_position = self.get_your_board_tile_position(row_index - row_offset, col_index)
-                self._screen.addstr( piece_position[0], piece_position[1], "X", curses.color_pair(color) | curses.A_ITALIC )
+                self.try_addstr( piece_position[0], piece_position[1], "X", curses.color_pair(color) | curses.A_ITALIC )
 
         self._screen.refresh()
 
@@ -302,7 +302,7 @@ class GameView( IGV.GameViewInterface ):
         # Print the title of this page and the
         # current state of the grids
         place_pieces = "Attack Plan"
-        self._screen.addstr( 1, self.get_centered_position([len(place_pieces), 1])[0], place_pieces, curses.color_pair(TITLE_COLOR_PAIR) )
+        self.try_addstr( 1, self.get_centered_position([len(place_pieces), 1])[0], place_pieces, curses.color_pair(TITLE_COLOR_PAIR) )
 
         # Draw the grid
         self.draw_grid( params )
@@ -311,17 +311,17 @@ class GameView( IGV.GameViewInterface ):
         # possible error message to the console
         if is_error_state:
             message = "Error! Already Attacked this Coordinate"
-            self._screen.addstr( 2, self.get_centered_position([len(message), 1])[0], message, curses.color_pair(ERROR_COLOR_PAIR) )
+            self.try_addstr( 2, self.get_centered_position([len(message), 1])[0], message, curses.color_pair(ERROR_COLOR_PAIR) )
 
         # If there is a state message, print it to the
         # console
         if state_message is not None:
-            self._screen.addstr( 2, self.get_centered_position([len(state_message), 1])[0], state_message, curses.color_pair(ERROR_COLOR_PAIR) )
+            self.try_addstr( 2, self.get_centered_position([len(state_message), 1])[0], state_message, curses.color_pair(ERROR_COLOR_PAIR) )
 
         # Draw the new piece on top of the board
         attack_position = self.get_opponent_board_tile_position(row_index, col_index)
         color = ERROR_COLOR_PAIR if is_error_state else TITLE_COLOR_PAIR
-        self._screen.addstr( attack_position[0], attack_position[1], "X", curses.color_pair(color) | curses.A_ITALIC )
+        self.try_addstr( attack_position[0], attack_position[1], "X", curses.color_pair(color) | curses.A_ITALIC )
 
         self._screen.refresh()
 
@@ -369,7 +369,7 @@ class GameView( IGV.GameViewInterface ):
         # Print the title of this page and the
         # current state of the grids
         title = "Standby"
-        self._screen.addstr( 1, self.get_centered_position([len(title), 1])[0], title, curses.color_pair(TITLE_COLOR_PAIR) )
+        self.try_addstr( 1, self.get_centered_position([len(title), 1])[0], title, curses.color_pair(TITLE_COLOR_PAIR) )
 
         # Draw the grid
         self.draw_grid( params )
@@ -378,7 +378,7 @@ class GameView( IGV.GameViewInterface ):
         # console otherwise set it to the default
         if state_message is None:
             state_message = "Waiting for opponent"
-        self._screen.addstr( 2, self.get_centered_position([len(state_message), 1])[0], state_message, curses.color_pair(ERROR_COLOR_PAIR) )
+        self.try_addstr( 2, self.get_centered_position([len(state_message), 1])[0], state_message, curses.color_pair(ERROR_COLOR_PAIR) )
 
         self._screen.refresh()
 
@@ -406,7 +406,7 @@ class GameView( IGV.GameViewInterface ):
         # Print the title of this page and the
         # current state of the grids
         title = "Game Over"
-        self._screen.addstr( 1, self.get_centered_position([len(title), 1])[0], title, curses.color_pair(TITLE_COLOR_PAIR) )
+        self.try_addstr( 1, self.get_centered_position([len(title), 1])[0], title, curses.color_pair(TITLE_COLOR_PAIR) )
 
         # Draw the grid
         self.draw_grid( params )
@@ -415,10 +415,10 @@ class GameView( IGV.GameViewInterface ):
         # to the calling function
         if win:
             message = "You Won!"
-            self._screen.addstr( 2, self.get_centered_position([len(message), 1])[0], message, curses.COLOR_GREEN )
+            self.try_addstr( 2, self.get_centered_position([len(message), 1])[0], message, curses.COLOR_GREEN )
         else:
             message = "You Lost!"
-            self._screen.addstr( 2, self.get_centered_position([len(message), 1])[0], message, curses.COLOR_RED )
+            self.try_addstr( 2, self.get_centered_position([len(message), 1])[0], message, curses.COLOR_RED )
 
         self._screen.refresh()
 
@@ -441,12 +441,12 @@ class GameView( IGV.GameViewInterface ):
 
         # Print the boards to the console
         opponents_board = "Opponent's Board"
-        self._screen.addstr( 3, self.get_centered_position([len(opponents_board), 1])[0], opponents_board, curses.color_pair(TITLE_COLOR_PAIR) )
+        self.try_addstr( 3, self.get_centered_position([len(opponents_board), 1])[0], opponents_board, curses.color_pair(TITLE_COLOR_PAIR) )
 
         self.print_board(opponent_board, self.opponent_board_position())
 
         your_board = "Your Board"
-        self._screen.addstr( 8*2+1, self.get_centered_position([len(your_board), 1])[0], your_board, curses.color_pair(TITLE_COLOR_PAIR) )
+        self.try_addstr( 8*2+1, self.get_centered_position([len(your_board), 1])[0], your_board, curses.color_pair(TITLE_COLOR_PAIR) )
         self.print_board(board, self.your_board_position())
     
     def your_board_position( self ) -> tuple[int, int]:
@@ -490,22 +490,37 @@ class GameView( IGV.GameViewInterface ):
     def print_board( self, board: list[list], position: tuple[int, int] ):
         # Print the columns
         for [x, col] in enumerate(IH.PLACEMENT_COL_TO_SYS_COL.keys()):
-            self._screen.addstr(position[0], position[1] + 3 + x*2, f"{col}")
+            self.try_addstr(position[0], position[1] + 3 + x*2, f"{col}")
         # Print the rows
         for [y, row] in enumerate(IH.PLACEMENT_ROW_TO_SYS_ROW.keys()):
-            self._screen.addstr(position[0] + 1 + y, position[1], f"{row}")
+            self.try_addstr(position[0] + 1 + y, position[1], f"{row}")
         # Print the body of the grid
         for y in range(len(board)):
             for x in range(len(board[y])):
                 pos = [position[0] + 1 + y, position[1] + 3 + x * 2]
                 if board[ y ][ x ] > IH.BASE_CELL:
-                    self._screen.addstr(pos[0], pos[1], 'S')
+                    self.try_addstr(pos[0], pos[1], 'S')
 
                 elif board[ y ][ x ] == IH.BASE_CELL:
-                    self._screen.addstr(pos[0], pos[1], '~')
+                    self.try_addstr(pos[0], pos[1], '~')
 
                 elif board[ y ][ x ] == IH.HIT_CELL:
-                    self._screen.addstr(pos[0], pos[1], 'X')
+                    self.try_addstr(pos[0], pos[1], 'X')
 
                 elif board[ y ][ x ] == IH.MISSED_CELL:
-                    self._screen.addstr(pos[0], pos[1], 'O')
+                    self.try_addstr(pos[0], pos[1], 'O')
+    
+    def try_addstr( self, posy, posx, message, color = 0 ):
+        """
+        Function: Try Addstr
+
+        Inputs: Position, message, color
+        Outputs: None
+
+        Description: This function will try to add a string to the screen at the specified position.
+                     If the position is out of bounds, it will not add the string
+        """
+        try:
+            self._screen.addstr(posy, posx, message, color)
+        except:
+            pass
