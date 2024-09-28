@@ -102,6 +102,16 @@ def main():
         oppenent_type = IH.PlayerTypeEnum.PLAYER_TYPE_JOIN
         connection = GH.Host()
 
+        # Prompt for AI selection
+        function_returns = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_AI_SELECTION, {})
+        ai_selection = function_returns[IH.VIEW_PARAM_AI_SELECTION]
+
+        if ai_selection:
+            # Prompt for AI difficulty
+            function_returns = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_AI_DIFFICULTY, {})
+            ai_difficulty = function_returns[IH.VIEW_PARAM_AI_DIFFICULTY]
+            function_parameters[IH.VIEW_PARAM_AI_DIFFICULTY] = ai_difficulty
+
     # Initially set the error state of the view to be false
     # as well as setting the initial size of the ship to be
     # the minimum possible number of ships

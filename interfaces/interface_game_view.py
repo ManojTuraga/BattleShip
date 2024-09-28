@@ -127,4 +127,30 @@ class GameViewInterface( ABC ):
         Description: This function is the interface function for drawing
                      the grid onto the page
         """
-        raise AssertionError( "Draw Grid Function not implemented" )
+        raise AssertionError( "Draw Grid Function not implemented" )\
+    
+    @abstractmethod
+    def prompt_ai_selection(self, params: dict) -> dict:
+        """
+        Function: Prompt AI Selection
+
+        Inputs: Configuration inputs
+        Outputs: Configuration outputs
+
+        Description: This function is the interface function for selecting
+                    whether to play with AI or not.
+        """
+        raise AssertionError("Prompt AI Selection function not implemented")
+
+    @abstractmethod
+    def prompt_ai_difficulty(self, params: dict) -> dict:
+        """
+        Function: Prompt AI Difficulty
+
+        Inputs: Configuration inputs
+        Outputs: Configuration outputs
+
+        Description: This function is the interface function for selecting
+                    the difficulty level of the AI.
+        """
+        raise AssertionError("Prompt AI Difficulty function not implemented")

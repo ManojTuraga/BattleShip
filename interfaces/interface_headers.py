@@ -37,6 +37,9 @@ VIEW_PARAM_STATE_MESSAGE = "STATE_MESSAGE"
 VIEW_PARAM_WIN = "WIN"
 VIEW_PARAM_SHIP_SUNK = "SHIP_SUNK"
 
+VIEW_PARAM_AI_SELECTION = "AI_SELECTION"
+VIEW_PARAM_AI_DIFFICULTY = "AI_DIFFICULTY"
+
 # Variables to map to row and column locations to minimize magic
 # numbers in the system
 ROW_INDEX = 0
@@ -121,6 +124,8 @@ class GameEventType( Enum ):
     GAME_EVENT_MAKE_ATTACK = 2
     GAME_EVENT_WAIT_FOR_OPPONENT = 3
     GAME_EVENT_GAME_END = 4
+    GAME_EVENT_AI_SELECTION = 5
+    GAME_EVENT_AI_DIFFICULTY = 6
 
 # Typdef the difference between actual coordinates (the input)
 # and system coordinates (how it should be stored)
