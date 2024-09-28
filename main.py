@@ -19,7 +19,7 @@ import game_presenter as GP
 import game_model as GM
 import client as GC
 import host as GH
-import AI
+from ai import AI
 
 from interfaces import interface_headers as IH
 

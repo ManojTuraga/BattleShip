@@ -7,8 +7,8 @@ class AI:
         Initialize the AI with the specified difficulty level.
         """
         self.difficulty = difficulty
-        self.board = [[0 for _ in range(IH.NUMBER_OF_COLUMNS)] for _ in range(IH.NUMBER_OF_ROWS)]
-        self.opponent_board = [[0 for _ in range(IH.NUMBER_OF_COLUMNS)] for _ in range(IH.NUMBER_OF_ROWS)]
+        self.board = [[0 for _ in range(IH.NUMBER_OF_COLS)] for _ in range(IH.NUMBER_OF_ROWS)]
+        self.opponent_board = [[0 for _ in range(IH.NUMBER_OF_COLS)] for _ in range(IH.NUMBER_OF_ROWS)]
         self.last_hit = None
         self.possible_targets = []
 

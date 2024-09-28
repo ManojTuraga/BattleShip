@@ -108,6 +108,7 @@ MISSED_CELL = -2
 class PlayerTypeEnum( Enum ):
     PLAYER_TYPE_HOST = 0
     PLAYER_TYPE_JOIN = 1
+    PLAYER_TYPE_AI = 2
 
 # This type is used to determine the state of the
 # coordinate
