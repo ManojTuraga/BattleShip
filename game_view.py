@@ -92,6 +92,91 @@ class GameView( IGV.GameViewInterface ):
         window_size = self._screen.getmaxyx()
         return [int(window_size[1]/2 - size[0]/2), int(window_size[0]/2 - size[1]/2)]
     
+
+    def prompt_ai_selection(self, params: dict) -> dict:
+        """
+        Function: Prompt AI Selection
+
+        Inputs: Configuration inputs
+        Outputs: Configuration outputs
+
+        Description: This function prompts the user to select whether to play with AI or not.
+        """
+        config_dict = params
+        ai_selection = False
+        ai_index = 0
+
+        while True:
+            self.clear_screen()
+            question = "Do you want to play with AI? (y/n)"
+            options = ["yes", "no"]
+            self.try_addstr(1, self.get_centered_position([len(question), 1])[0], question)
+            # self._screen.refresh()
+
+            for index, option in enumerate(options):
+                message = f'{index}) {option}'
+                color = SELECTED_COLOR_PAIR if ai_index == index else NON_SELECTED_COLOR_PAIR
+                self.try_addstr(3 + index, self.get_centered_position([len(message), 1])[0], message, curses.color_pair(color))
+
+            self._screen.refresh()
+
+            key = self._screen.getch()
+            if key == curses.KEY_UP:
+                ai_index = (ai_index - 1) % len(options)
+            elif key == curses.KEY_DOWN:
+                ai_index = (ai_index + 1) % len(options)
+            elif key == curses.KEY_ENTER or key == 10:
+                ai_selection = True if options[ai_index] == "yes" else False
+                break
+    
+            # key = self._screen.getch()
+            # if key in [ord('y'), ord('Y')]:
+            #     ai_selection = True
+            #     break
+            # elif key in [ord('n'), ord('N')]:
+            #     ai_selection = False
+            #     break
+
+        config_dict[IH.VIEW_PARAM_AI_SELECTION] = ai_selection
+        return config_dict
+
+    def prompt_ai_difficulty(self, params: dict) -> dict:
+        """
+        Function: Prompt AI Difficulty
+
+        Inputs: Configuration inputs
+        Outputs: Configuration outputs
+
+        Description: This function prompts the user to select the difficulty level of the AI.
+        """
+        config_dict = params
+        difficulty_levels = ["Easy", "Medium", "Hard"]
+        difficulty_index = 0
+
+        while True:
+            self.clear_screen()
+            question = "Select AI difficulty level:"
+            self.try_addstr(1, self.get_centered_position([len(question), 1])[0], question)
+
+            for index, level in enumerate(difficulty_levels):
+                message = f'{index}) {level}'
+                color = SELECTED_COLOR_PAIR if difficulty_index == index else NON_SELECTED_COLOR_PAIR
+                self.try_addstr(3 + index, self.get_centered_position([len(message), 1])[0], message, curses.color_pair(color))
+
+            self._screen.refresh()
+
+            key = self._screen.getch()
+            if key == curses.KEY_UP:
+                difficulty_index = (difficulty_index - 1) % len(difficulty_levels)
+            elif key == curses.KEY_DOWN:
+                difficulty_index = (difficulty_index + 1) % len(difficulty_levels)
+            elif key == curses.KEY_ENTER or key == 10:
+                config_dict[IH.VIEW_PARAM_AI_DIFFICULTY] = difficulty_levels[difficulty_index]
+                break
+
+        return config_dict
+
+
     def draw_start_page( self, params : dict ) -> dict:
         """
         Function: Draw Start Page
@@ -142,15 +227,20 @@ class GameView( IGV.GameViewInterface ):
                 config_dict[ IH.VIEW_PARAM_PLAYER_TYPE ] = IH.PlayerTypeEnum( int( player_type ) )
                 break
 
+        if player_type == IH.PlayerTypeEnum.PLAYER_TYPE_HOST:
+            config_dict = self.prompt_ai_selection(config_dict)
+            if config_dict[IH.VIEW_PARAM_AI_SELECTION]:
+                config_dict = self.prompt_ai_difficulty(config_dict)
         ship_index = 0
 
         # Obtain the number of ships that the player will be facing
         while True:
             self.clear_screen()
-            # Print the welcome dialog
-            number_of_ships_message = "How many ships will you be playing with?"
+            number_of_ships_message = "How many ships will you be playing with????"
             # Show the welcome message in the middle of the screen
             self.try_addstr( 1, self.get_centered_position([len(number_of_ships_message), 1])[0], number_of_ships_message, curses.color_pair(TITLE_COLOR_PAIR) )
+            self._screen.refresh()
+            # Print the welcome dialog
             ship_choices = 5
             centered_pos = self.get_centered_position([ship_choices*2, 1])
             for ship in range(5):
@@ -173,6 +263,17 @@ class GameView( IGV.GameViewInterface ):
                     ship_index = int(curses.keyname(key)) - 1
                 except:
                     pass
+            
+
+            key = self._screen.getch()
+            if key == curses.KEY_ENTER or key == 10:
+                config_dict[IH.VIEW_PARAM_NUM_OF_SHIPS] = ship_index
+                break
+            elif key == curses.KEY_UP:
+                ship_index = (ship_index - 1) % (IH.MAX_NUM_OF_SHIPS + 1)
+            elif key == curses.KEY_DOWN:
+                ship_index = (ship_index + 1) % (IH.MAX_NUM_OF_SHIPS + 1)
+
         
         # Return the configurations once all the required
         # configurations have been generated

@@ -79,6 +79,8 @@ class GamePresenter( IGP.GamePresenterInterface ):
             IH.GameEventType.GAME_EVENT_MAKE_ATTACK:        ( self._view_instance.prompt_user_attack, dict( {}, **params ) ),
             IH.GameEventType.GAME_EVENT_WAIT_FOR_OPPONENT:  ( self._view_instance.prompt_wait_page,   dict( {}, **params ) ),
             IH.GameEventType.GAME_EVENT_GAME_END:           ( self._view_instance.draw_game_over_page,dict( {}, **params ) ),
+            IH.GameEventType.GAME_EVENT_AI_SELECTION: (self._view_instance.prompt_ai_selection, dict({}, **params)),
+            IH.GameEventType.GAME_EVENT_AI_DIFFICULTY: (self._view_instance.prompt_ai_difficulty, dict({}, **params)),
             }
         
         # Obtain the function and the parameters for the function from the

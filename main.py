@@ -19,6 +19,7 @@ import game_presenter as GP
 import game_model as GM
 import client as GC
 import host as GH
+import AI
 
 from interfaces import interface_headers as IH
 
@@ -102,6 +103,19 @@ def main():
         oppenent_type = IH.PlayerTypeEnum.PLAYER_TYPE_JOIN
         connection = GH.Host()
 
+        # Prompt for AI selection
+        function_returns = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_AI_SELECTION, {})
+        ai_selection = function_returns[IH.VIEW_PARAM_AI_SELECTION]
+
+        if ai_selection:
+            # Prompt for AI difficulty
+            function_returns = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_AI_DIFFICULTY, {})
+            ai_difficulty = function_returns[IH.VIEW_PARAM_AI_DIFFICULTY]
+            # function_parameters[IH.VIEW_PARAM_AI_DIFFICULTY] = ai_difficulty
+            ai_opponent = AI(ai_difficulty)
+            ai_opponent.place_ships()
+            opponent_type = IH.PlayerTypeEnum.PLAYER_TYPE_AI
+
     # Initially set the error state of the view to be false
     # as well as setting the initial size of the ship to be
     # the minimum possible number of ships
@@ -168,7 +182,8 @@ def main():
             # Increment the size only if we are able to
             # successfully place a ship
             size += 1
-
+    if opponent_type == IH.PlayerTypeEnum.PLAYER_TYPE_AI:
+        ai_opponent.place_ships()
     # Re initialize function parameters to have the most
     # up to date data remove any messages that could
     # have been triggered due to previous steps
