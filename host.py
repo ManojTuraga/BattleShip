@@ -21,6 +21,7 @@ Sources: DigitalOcean
 ################################################################################
 # Imports
 ################################################################################
+import time
 import socket
 import interfaces.interface_headers as IH
 from interfaces.interface_game_interaction import GameInteractionInterface
@@ -48,8 +49,15 @@ class Host( GameInteractionInterface ):
         """
         
         # Create and bind a socket to the host ip and port
-        host_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        host_socket.bind((self.host, self.host_port))
+        # Try to connect until the socket is no longer in use
+        while True:
+            try:
+                host_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                host_socket.bind((self.host, self.host_port))
+                break
+            except:
+                # Keep trying if we hit a socket in use error
+                time.sleep(0.1)
 
         # Listen for connections from a client
         host_socket.listen(1)

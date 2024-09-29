@@ -29,12 +29,16 @@ VIEW_PARAM_DIRECTION = "DIRECTION"
 VIEW_PARAM_ROW = "ROW"
 VIEW_PARAM_COL = "COL"
 VIEW_PARAM_IS_ERROR_STATE = "IS_ERROR_STATE"
+VIEW_PARAM_PLACE_SHIP = "PLACE_SHIP"
 VIEW_PARAM_BOARD = "BOARD"
 VIEW_PARAM_OPPONENT_BOARD = "OPPONENT_BOARD"
 VIEW_PARAM_SIZE = "SIZE"
 VIEW_PARAM_STATE_MESSAGE = "STATE_MESSAGE"
 VIEW_PARAM_WIN = "WIN"
 VIEW_PARAM_SHIP_SUNK = "SHIP_SUNK"
+
+VIEW_PARAM_AI_SELECTION = "AI_SELECTION"
+VIEW_PARAM_AI_DIFFICULTY = "AI_DIFFICULTY"
 
 # Variables to map to row and column locations to minimize magic
 # numbers in the system
@@ -76,8 +80,8 @@ PLACEMENT_COL_TO_SYS_COL = { 'A' : 0,
                              'J' : 9 }
 
 # Invert the previous mappings to allow for fast reversal
-SYS_ROW_TO_PLACMENT_ROW = { val: key for key, val in PLACEMENT_ROW_TO_SYS_ROW.items() }
-SYS_COL_TO_PLACMENT_COL = { val: key for key, val in PLACEMENT_COL_TO_SYS_COL.items() }
+SYS_ROW_TO_PLACMENT_ROW = [ key for key in PLACEMENT_ROW_TO_SYS_ROW.keys() ]
+SYS_COL_TO_PLACMENT_COL = [ key for key in PLACEMENT_COL_TO_SYS_COL.keys() ]
 
 # Ensure that all possible mappings are accounted for
 assert( len( PLACEMENT_ROW_TO_SYS_ROW ) == NUMBER_OF_ROWS )
@@ -104,6 +108,7 @@ MISSED_CELL = -2
 class PlayerTypeEnum( Enum ):
     PLAYER_TYPE_HOST = 0
     PLAYER_TYPE_JOIN = 1
+    PLAYER_TYPE_AI = 2
 
 # This type is used to determine the state of the
 # coordinate
@@ -120,6 +125,8 @@ class GameEventType( Enum ):
     GAME_EVENT_MAKE_ATTACK = 2
     GAME_EVENT_WAIT_FOR_OPPONENT = 3
     GAME_EVENT_GAME_END = 4
+    GAME_EVENT_AI_SELECTION = 5
+    GAME_EVENT_AI_DIFFICULTY = 6
 
 # Typdef the difference between actual coordinates (the input)
 # and system coordinates (how it should be stored)
