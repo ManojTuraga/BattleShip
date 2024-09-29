@@ -19,7 +19,7 @@ import game_presenter as GP
 import game_model as GM
 import client as GC
 import host as GH
-from ai import AI
+from AI import AI
 
 from interfaces import interface_headers as IH
 
@@ -96,6 +96,7 @@ def main():
     # Make the opponent be the opposite type of the player
     # create the correct networking state for the current
     # player
+
     if player_type == IH.PlayerTypeEnum.PLAYER_TYPE_JOIN:
         oppenent_type = IH.PlayerTypeEnum.PLAYER_TYPE_HOST
         connection = GC.Client()
@@ -107,12 +108,14 @@ def main():
         function_returns = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_AI_SELECTION, {})
         ai_selection = function_returns[IH.VIEW_PARAM_AI_SELECTION]
 
+
+
         if ai_selection:
             # Prompt for AI difficulty
             function_returns = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_AI_DIFFICULTY, {})
             ai_difficulty = function_returns[IH.VIEW_PARAM_AI_DIFFICULTY]
             # function_parameters[IH.VIEW_PARAM_AI_DIFFICULTY] = ai_difficulty
-            ai_opponent = AI(ai_difficulty)
+            ai_opponent = AI(ai_difficulty, number_of_ships)
             ai_opponent.place_ships()
             opponent_type = IH.PlayerTypeEnum.PLAYER_TYPE_AI
 
@@ -182,8 +185,9 @@ def main():
             # Increment the size only if we are able to
             # successfully place a ship
             size += 1
-    if opponent_type == IH.PlayerTypeEnum.PLAYER_TYPE_AI:
-        ai_opponent.place_ships()
+
+   # if opponent_type == IH.PlayerTypeEnum.PLAYER_TYPE_AI:
+      #  ai_opponent.place_ships()
     # Re initialize function parameters to have the most
     # up to date data remove any messages that could
     # have been triggered due to previous steps
@@ -194,19 +198,22 @@ def main():
 
     # Trigger the presenter to display the wait page
     # as well as open the network connection
+
     presenter.trigger_view_event( IH.GameEventType.GAME_EVENT_WAIT_FOR_OPPONENT, function_parameters )
     connection.open_connection()
 
     # Initialize a variable to handle whether
     # the game should end or not
     game_over = False
+    
     win = False
 
     # Execute the following loop while the game
     # can still be played
     while not game_over:
         function_parameters[ IH.VIEW_PARAM_BOARD ] = model.get_visual_board( player_type )
-        function_parameters[ IH.VIEW_PARAM_OPPONENT_BOARD ] = model.get_visual_board( oppenent_type )
+        function_parameters[ IH.
+        VIEW_PARAM_OPPONENT_BOARD ] = model.get_visual_board( oppenent_type )
 
         # The following code logic is executed if it is not
         # the current players turn
