@@ -86,9 +86,12 @@ class AI:
         """
         Medium difficulty: Fire randomly until it hits a ship, then fire in orthogonally adjacent spaces.
         """
-        if self.last_hit:
-            # Implement logic to fire in adjacent spaces
-            pass
+        if self.possible_targets:
+            return self.possible_targets.pop(0)
+        elif self.last_hit:
+            row, col = self.last_hit
+            self.possible_targets = self._get_adjacent_coords((row, col))
+            return self.possible_targets.pop(0)
         else:
             return self._easy_attack()
 
@@ -106,10 +109,32 @@ class AI:
         Update the opponent's board with the result of the attack.
         """
         row, col = coord
+        col = self.convert_letter_to_col(col)
         self.opponent_board[row][col] = result
         if result == IH.CoordStateType.COORD_STATE_HIT:
             self.last_hit = coord
             self.possible_targets.extend(self._get_adjacent_coords(coord))
+    
+    def update_ai_board(self, coord, result):
+        """
+        Update the ai's board with the result of the attack.
+        """
+        row, col = coord
+        col = self.convert_letter_to_col(col)
+        self.board[row][col] = result
+    
+    def check_ship_at(self, coordinates):
+        """
+        Check if there is a ship at the given coordinates on the AI's board.
+
+        :param coordinates: A tuple (row, col) representing the coordinates to check.
+        :return: "Hit" if there is a ship at the given coordinates, "Miss" otherwise.
+        """
+        row, col = coordinates
+        if self.board[row][col] == 1:
+            return 1
+        else:
+            return 0
 
     def _get_adjacent_coords(self, coord):
         """
@@ -126,3 +151,75 @@ class AI:
         if col < IH.NUMBER_OF_COLUMNS - 1:
             adjacent_coords.append((row, col + 1))
         return adjacent_coords
+    
+    def ships_are_alive(self):
+        """
+        Check if the AI has any ships left.
+        Returns True if there are any ships (1's) remaining on the board, False otherwise.
+        """
+        for row in self.board:
+            if 1 in row:  # If there is a '1' anywhere, the AI still has ships
+                return True
+        return False
+    
+    def is_valid_coord(self, coord):
+        """
+        Check if the given coordinate is within the valid range of the board.
+        
+        :param coord: A tuple (row, col) representing the coordinate.
+        :return: True if the coordinate is within bounds, False otherwise.
+        """
+        row, col = coord
+        return 0 <= row < IH.NUMBER_OF_ROWS and 0 <= col < IH.NUMBER_OF_COLS
+    
+    def get_coord(self, coord, is_opponent=False):
+        """
+        Get the state of a given coordinate from the board (or opponent's board).
+        
+        :param coord: A tuple (row, col) representing the coordinate.
+        :param is_opponent: If True, check the opponent's board; otherwise, check the AI's board.
+        :return: The state at the given coordinate (e.g., 0 for empty, 1 for ship, etc.).
+        """
+        row, col = coord
+        if is_opponent:
+            return self.opponent_board[row][col]
+        return self.board[row][col]
+    
+    def update_coord(self, coord, value, is_opponent=False):
+        """
+        Update the state of a given coordinate on the board (or opponent's board).
+        
+        :param coord: A tuple (row, col) representing the coordinate.
+        :param value: The value to set at the given coordinate (e.g., 1 for ship, 0 for empty, etc.).
+        :param is_opponent: If True, update the opponent's board; otherwise, update the AI's board.
+        """
+        row, col = coord
+        if is_opponent:
+            self.opponent_board[row][col] = value
+        else:
+            self.board[row][col] = value
+
+    def convert_col_to_letter(self, coord):
+        """
+        Convert a column index (0-9) to a letter (A-J).
+        
+        :param col: Integer column index (0-9)
+        :return: Corresponding letter (A-J) or an error message if out of range
+        """
+        row, col = coord
+        if 0 <= col <= 9:
+            return row, chr(ord('A') + col)  # Convert to letter (A=0, B=1, ..., J=9)
+        else:
+            raise ValueError("Column index must be between 0 and 9.")
+
+    def convert_letter_to_col(self, letter):
+        """
+        Convert a letter (A-J) to a column index (0-9).
+        
+        :param letter: Character representing the column (A-J)
+        :return: Corresponding column index (0-9) or an error message if out of range
+        """
+        if letter in "ABCDEFGHIJ":
+            return ord(letter) - ord('A')  # Convert letter to column index
+        else:
+            raise ValueError("Letter must be between A and J.")
