@@ -17,6 +17,7 @@ class AI:
     def place_ships(self):
         ships_placed = 0
 
+
         for ship_length in range(1,self.num_ships+1):
             # Randomly determine ship length (you can modify this logic to have fixed-length ships)
 
@@ -115,6 +116,7 @@ class AI:
             self.last_hit = coord
             self.possible_targets.extend(self._get_adjacent_coords(coord))
     
+
     def update_ai_board(self, coord, result):
         """
         Update the ai's board with the result of the attack.
@@ -123,6 +125,7 @@ class AI:
         col = self.convert_letter_to_col(col)
         self.board[row][col] = result
     
+
     def check_ship_at(self, coordinates):
         """
         Check if there is a ship at the given coordinates on the AI's board.
@@ -131,10 +134,14 @@ class AI:
         :return: "Hit" if there is a ship at the given coordinates, "Miss" otherwise.
         """
         row, col = coordinates
+
         if self.board[row][col] == 1:
             return 1
         else:
             return 0
+
+        return "Hit" if self.board[row][col] == 1 else "Miss"
+
 
     def _get_adjacent_coords(self, coord):
         """
