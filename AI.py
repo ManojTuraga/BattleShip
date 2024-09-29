@@ -17,6 +17,7 @@ class AI:
     def place_ships(self):
         ships_placed = 0
 
+
         for ship_length in range(1,self.num_ships+1):
             # Randomly determine ship length (you can modify this logic to have fixed-length ships)
 
@@ -86,9 +87,12 @@ class AI:
         """
         Medium difficulty: Fire randomly until it hits a ship, then fire in orthogonally adjacent spaces.
         """
-        if self.last_hit:
-            # Implement logic to fire in adjacent spaces
-            pass
+        if self.possible_targets:
+            return self.possible_targets.pop(0)
+        elif self.last_hit:
+            row, col = self.last_hit
+            self.possible_targets = self._get_adjacent_coords((row, col))
+            return self.possible_targets.pop(0)
         else:
             return self._easy_attack()
 
@@ -110,6 +114,16 @@ class AI:
         if result == IH.CoordStateType.COORD_STATE_HIT:
             self.last_hit = coord
             self.possible_targets.extend(self._get_adjacent_coords(coord))
+    
+    def check_ship_at(self, coordinates):
+        """
+        Check if there is a ship at the given coordinates on the AI's board.
+
+        :param coordinates: A tuple (row, col) representing the coordinates to check.
+        :return: "Hit" if there is a ship at the given coordinates, "Miss" otherwise.
+        """
+        row, col = coordinates
+        return "Hit" if self.board[row][col] == 1 else "Miss"
 
     def _get_adjacent_coords(self, coord):
         """
