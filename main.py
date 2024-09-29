@@ -19,7 +19,7 @@ import game_presenter as GP
 import game_model as GM
 import client as GC
 import host as GH
-from ai import AI
+from AI import AI
 
 from interfaces import interface_headers as IH
 
@@ -96,6 +96,7 @@ def main():
     # Make the opponent be the opposite type of the player
     # create the correct networking state for the current
     # player
+
     if player_type == IH.PlayerTypeEnum.PLAYER_TYPE_JOIN:
         oppenent_type = IH.PlayerTypeEnum.PLAYER_TYPE_HOST
         connection = GC.Client()
@@ -107,12 +108,14 @@ def main():
         function_returns = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_AI_SELECTION, {})
         ai_selection = function_returns[IH.VIEW_PARAM_AI_SELECTION]
 
+
+
         if ai_selection:
             # Prompt for AI difficulty
             function_returns = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_AI_DIFFICULTY, {})
             ai_difficulty = function_returns[IH.VIEW_PARAM_AI_DIFFICULTY]
             # function_parameters[IH.VIEW_PARAM_AI_DIFFICULTY] = ai_difficulty
-            ai_opponent = AI(ai_difficulty)
+            ai_opponent = AI(ai_difficulty, number_of_ships)
             ai_opponent.place_ships()
             opponent_type = IH.PlayerTypeEnum.PLAYER_TYPE_AI
 
@@ -155,7 +158,8 @@ def main():
         # into system coordinates and compute the ending coordinate
         # based on the values returned by configuration
         start_coordinate_sys = ( IH.PLACEMENT_ROW_TO_SYS_ROW[ start_coordinate[ IH.ROW_INDEX ] ], IH.PLACEMENT_COL_TO_SYS_COL[ start_coordinate[ IH.COLUMN_INDEX ] ] )
-        end_coordinate_sys = get_ending_coordinate( start_coordinate_sys, direction, size )
+        end_c
+        oordinate_sys = get_ending_coordinate( start_coordinate_sys, direction, size )
 
         # Here we are creating a set of all the coordinates
         # that the ship is predicted to take, We use a set
@@ -182,8 +186,9 @@ def main():
             # Increment the size only if we are able to
             # successfully place a ship
             size += 1
-    if opponent_type == IH.PlayerTypeEnum.PLAYER_TYPE_AI:
-        ai_opponent.place_ships()
+
+   # if opponent_type == IH.PlayerTypeEnum.PLAYER_TYPE_AI:
+      #  ai_opponent.place_ships()
     # Re initialize function parameters to have the most
     # up to date data remove any messages that could
     # have been triggered due to previous steps
@@ -194,8 +199,9 @@ def main():
 
     # Trigger the presenter to display the wait page
     # as well as open the network connection
-    presenter.trigger_view_event( IH.GameEventType.GAME_EVENT_WAIT_FOR_OPPONENT, function_parameters )
-    connection.open_connection()
+    if opponent_type != IH.PlayerTypeEnum.PLAYER_TYPE_AI:
+        presenter.trigger_view_event( IH.GameEventType.GAME_EVENT_WAIT_FOR_OPPONENT, function_parameters )
+        connection.open_connection()
 
     # Initialize a variable to handle whether
     # the game should end or not
@@ -206,74 +212,104 @@ def main():
     # can still be played
     while not game_over:
         function_parameters[ IH.VIEW_PARAM_BOARD ] = model.get_visual_board( player_type )
-        function_parameters[ IH.VIEW_PARAM_OPPONENT_BOARD ] = model.get_visual_board( oppenent_type )
+        function_parameters[ IH.
+        VIEW_PARAM_OPPONENT_BOARD ] = model.get_visual_board( oppenent_type )
 
         # The following code logic is executed if it is not
         # the current players turn
         if player_type != turn:
-            # Trigger the presenter's wait for event page and reset
-            # the error state and the status state after the call
-            presenter.trigger_view_event( IH.GameEventType.GAME_EVENT_WAIT_FOR_OPPONENT, function_parameters )
-            function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = None
-            function_parameters[ IH.VIEW_PARAM_IS_ERROR_STATE ] = False
-            
-            # Wait until we get a response from the opponent and
-            # load the data as a dictionary. Along with that,
-            # initialize a variable to store the response that
-            # will be sent back
-            data = connection.wait_for_message()
-            data = json.loads( data )
-            response = dict()
-            
-            # Unpack the data into coordinates and get the current
-            # state of the coordinate on the board
-            coord = ( data[ IH.VIEW_PARAM_ROW ], data[ IH.VIEW_PARAM_COL ] )
-            cell = model.get_coord( player_type, coord )
+            if opponent_type == IH.PlayerTypeEnum.PLAYER_TYPE_AI:
+                attack_coord = ai_opponent.make_attack()
+                row, col = attack_coord
+                cell = model.get_coord(player_type, (row, col))
 
-            # If the coordinate is a ship coordinate, and it is not hit already,
-            # make sure that it is in the hit state. Otherwise, the the opponent
-            # missed 
-            if cell[ IH.GAME_COORD_TYPE_ID_INDEX ] > IH.BASE_CELL and cell[ IH.GAME_COORD_TYPE_STATE_INDEX ] != IH.CoordStateType.COORD_STATE_HIT:
-                response[ IH.GAME_COORD_TYPE_STATE_INDEX ] = IH.CoordStateType.COORD_STATE_HIT.value
-                cell[ IH.GAME_COORD_TYPE_STATE_INDEX ] = IH.CoordStateType.COORD_STATE_HIT
+                # If the coordinate is a ship coordinate, and it is not hit already,
+                # make sure that it is in the hit state. Otherwise, the opponent missed
+                if cell[IH.GAME_COORD_TYPE_ID_INDEX] > IH.BASE_CELL and cell[IH.GAME_COORD_TYPE_STATE_INDEX] != IH.CoordStateType.COORD_STATE_HIT:
+                    cell[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_HIT
+                    function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = "Hit!"
+                else:
+                    cell[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_MISS
+                    function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = "Miss!"
 
-            else:
-                response[ IH.GAME_COORD_TYPE_STATE_INDEX ] =  IH.CoordStateType.COORD_STATE_MISS.value
-                cell[ IH.GAME_COORD_TYPE_STATE_INDEX ] = IH.CoordStateType.COORD_STATE_MISS
+                model.update_coord(player_type, (row, col), cell)
+                
 
-            # Update the player's model with the new data for the attack
-            model.update_coord( player_type, coord, cell )
+                # Determine if the result of this attack caused the opponent to win
+                if not model.ships_are_alive(player_type):
+                    game_over = True
+                    win = False
 
-            # Determine if the result of this attack cause the opponent
-            # to win and send the message
-            response[ IH.VIEW_PARAM_WIN ] = not model.ships_are_alive( player_type )
-            response[ IH.VIEW_PARAM_SHIP_SUNK ] = not model.ship_is_alive( player_type, cell[ IH.GAME_COORD_TYPE_ID_INDEX ] )
-            response[ IH.VIEW_PARAM_SIZE ] = cell[ IH.GAME_COORD_TYPE_ID_INDEX ]
-            connection.send_message( json.dumps( response ) )
-            
-            # Update the state message to allow the presenter to display this
-            # message on the next page load
-            if cell[ IH.GAME_COORD_TYPE_STATE_INDEX ] == IH.CoordStateType.COORD_STATE_HIT:
-                function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = f"The opponent's move at row={ IH.SYS_ROW_TO_PLACMENT_ROW[ coord[ 0 ] ] }, col={ IH.SYS_COL_TO_PLACMENT_COL[ coord[ 1 ] ] } hit!"
+                # Update the AI's knowledge of the opponent's board
+                ai_opponent.update_opponent_board((row, col), cell[IH.GAME_COORD_TYPE_STATE_INDEX])
 
-            else:
-                function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = f"The opponent's move at row={ IH.SYS_ROW_TO_PLACMENT_ROW[ coord[ 0 ] ] }, col={ IH.SYS_COL_TO_PLACMENT_COL[ coord[ 1 ] ] } missed!"
+                # Make it so the user is now the active player
+                turn = player_type
 
-            # If Ship was sunk, indictate as a status message that the ship was sunk
-            if response[ IH.VIEW_PARAM_SHIP_SUNK ]:
-                function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] += f"\nShip of size { cell[ IH.GAME_COORD_TYPE_ID_INDEX ] } was sunk!"
+            else: 
+                # Trigger the presenter's wait for event page and reset
+                # the error state and the status state after the call
+                presenter.trigger_view_event( IH.GameEventType.GAME_EVENT_WAIT_FOR_OPPONENT, function_parameters )
+                function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = None
+                function_parameters[ IH.VIEW_PARAM_IS_ERROR_STATE ] = False
+                
+                # Wait until we get a response from the opponent and
+                # load the data as a dictionary. Along with that,
+                # initialize a variable to store the response that
+                # will be sent back
+                data = connection.wait_for_message()
+                data = json.loads( data )
+                response = dict()
+                
+                # Unpack the data into coordinates and get the current
+                # state of the coordinate on the board
+                coord = ( data[ IH.VIEW_PARAM_ROW ], data[ IH.VIEW_PARAM_COL ] )
+                cell = model.get_coord( player_type, coord )
 
-            # Make it so the user is now the active
-            # player
-            turn = player_type
+                # If the coordinate is a ship coordinate, and it is not hit already,
+                # make sure that it is in the hit state. Otherwise, the the opponent
+                # missed 
+                if cell[ IH.GAME_COORD_TYPE_ID_INDEX ] > IH.BASE_CELL and cell[ IH.GAME_COORD_TYPE_STATE_INDEX ] != IH.CoordStateType.COORD_STATE_HIT:
+                    response[ IH.GAME_COORD_TYPE_STATE_INDEX ] = IH.CoordStateType.COORD_STATE_HIT.value
+                    cell[ IH.GAME_COORD_TYPE_STATE_INDEX ] = IH.CoordStateType.COORD_STATE_HIT
 
-            # If the result of the other player's attack
-            # caused your board to be destoryed, close
-            # the connection and indicate that you lost
-            if response[ IH.VIEW_PARAM_WIN ]:
-                connection.close_connection()
-                game_over = True
-                win = False
+                else:
+                    response[ IH.GAME_COORD_TYPE_STATE_INDEX ] =  IH.CoordStateType.COORD_STATE_MISS.value
+                    cell[ IH.GAME_COORD_TYPE_STATE_INDEX ] = IH.CoordStateType.COORD_STATE_MISS
+
+                # Update the player's model with the new data for the attack
+                model.update_coord( player_type, coord, cell )
+
+                # Determine if the result of this attack cause the opponent
+                # to win and send the message
+                response[ IH.VIEW_PARAM_WIN ] = not model.ships_are_alive( player_type )
+                response[ IH.VIEW_PARAM_SHIP_SUNK ] = not model.ship_is_alive( player_type, cell[ IH.GAME_COORD_TYPE_ID_INDEX ] )
+                response[ IH.VIEW_PARAM_SIZE ] = cell[ IH.GAME_COORD_TYPE_ID_INDEX ]
+                connection.send_message( json.dumps( response ) )
+                
+                # Update the state message to allow the presenter to display this
+                # message on the next page load
+                if cell[ IH.GAME_COORD_TYPE_STATE_INDEX ] == IH.CoordStateType.COORD_STATE_HIT:
+                    function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = f"The opponent's move at row={ IH.SYS_ROW_TO_PLACMENT_ROW[ coord[ 0 ] ] }, col={ IH.SYS_COL_TO_PLACMENT_COL[ coord[ 1 ] ] } hit!"
+
+                else:
+                    function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = f"The opponent's move at row={ IH.SYS_ROW_TO_PLACMENT_ROW[ coord[ 0 ] ] }, col={ IH.SYS_COL_TO_PLACMENT_COL[ coord[ 1 ] ] } missed!"
+
+                # If Ship was sunk, indictate as a status message that the ship was sunk
+                if response[ IH.VIEW_PARAM_SHIP_SUNK ]:
+                    function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] += f"\nShip of size { cell[ IH.GAME_COORD_TYPE_ID_INDEX ] } was sunk!"
+
+                # Make it so the user is now the active
+                # player
+                turn = player_type
+
+                # If the result of the other player's attack
+                # caused your board to be destoryed, close
+                # the connection and indicate that you lost
+                if response[ IH.VIEW_PARAM_WIN ]:
+                    connection.close_connection()
+                    game_over = True
+                    win = False
 
         else:
             # Trigger the presenter to display the attack page
