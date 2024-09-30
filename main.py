@@ -20,6 +20,7 @@ import game_model as GM
 import client as GC
 import host as GH
 from AI import AI
+from playsound import playsound
 
 
 from interfaces import interface_headers as IH
@@ -31,6 +32,12 @@ import json
 ################################################################################
 # Procedures
 ################################################################################
+
+def play_hit_sound():
+    """
+    Play a sound when a ship is hit.
+    """
+    playsound('hit_sound.mp3')
 
 def main():
     """
@@ -175,6 +182,7 @@ def main():
                 # make sure that it is in the hit state. Otherwise, the opponent missed
                 if cell[IH.GAME_COORD_TYPE_ID_INDEX] > IH.BASE_CELL and cell[IH.GAME_COORD_TYPE_STATE_INDEX] != IH.CoordStateType.COORD_STATE_HIT:
                     cell[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_HIT
+                    playsound('./hit_sound.mp3')
                     function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = "The AI hit!"
                 else:
                     cell[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_MISS
@@ -212,6 +220,7 @@ def main():
                 if cell[IH.GAME_COORD_TYPE_ID_INDEX] > IH.BASE_CELL and cell[IH.GAME_COORD_TYPE_STATE_INDEX] != IH.CoordStateType.COORD_STATE_HIT:
                     response[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_HIT.value
                     cell[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_HIT
+                    playsound('./hit_sound.mp3')
                 else:
                     response[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_MISS.value
                 # Update the player's model with the new data for the attack
