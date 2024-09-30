@@ -205,7 +205,7 @@ def main():
                 
                 # Unpack the data into coordinates and get the current
                 # state of the coordinate on the board
-                coord = (data[IH.VIEW_PARAM_ROW], data[IH.VIEW_PARAM_COL])
+                coord = (IH.PLACEMENT_ROW_TO_SYS_ROW[data[IH.VIEW_PARAM_ROW]], IH.PLACEMENT_COL_TO_SYS_COL[data[IH.VIEW_PARAM_COL]])
                 cell = model.get_coord(player_type, coord)
                 # If the coordinate is a ship coordinate, and it is not hit already,
                 # make sure that it is in the hit state. Otherwise, the opponent missed
@@ -268,12 +268,13 @@ def main():
                     function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = "Miss!"
 
                 model.update_coord(opponent_type, attack_sys, cell)
-                # Determine if the result of this attack caused the opponent to win
-                if not model.ships_are_alive(opponent_type):
-                    game_over = True
-                    win = True
 
-                if not ai_opponent: # Only send the attack result if we are playing against a remote player
+                if ai_opponent:
+                    # Determine if the result of this attack caused the opponent to win
+                    if not model.ships_are_alive(opponent_type):
+                        game_over = True
+                        win = True
+                else: # Only send the attack result if we are playing against a remote player
                     # Send the attack result to the opponent
                     response = {
                         IH.VIEW_PARAM_ROW: attack[IH.VIEW_PARAM_ROW],
@@ -285,6 +286,29 @@ def main():
                     }
 
                     connection.send_message(json.dumps(response)) 
+                    # Obtain the response from the other player
+                    response = json.loads( connection.wait_for_message() )
+                    
+                    model.update_coord( opponent_type, attack_sys, { IH.GAME_COORD_TYPE_ID_INDEX: cell[ IH.GAME_COORD_TYPE_ID_INDEX ], 
+                                                                    IH.GAME_COORD_TYPE_STATE_INDEX: IH.CoordStateType( response[ IH.GAME_COORD_TYPE_STATE_INDEX ] ) } )
+                    
+                    # Update the state message to allow the presenter to display this
+                    # message on the next page load
+                    if IH.CoordStateType( response[ IH.GAME_COORD_TYPE_STATE_INDEX ] ) == IH.CoordStateType.COORD_STATE_HIT:
+                        function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = f"Your move at row={ attack[ IH.VIEW_PARAM_ROW ] }, col={ attack[ IH.VIEW_PARAM_COL ] } hit!"
+
+                    else:
+                        function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = f"Your move at row={ attack[ IH.VIEW_PARAM_ROW ] }, col={ attack[ IH.VIEW_PARAM_COL ] } missed!"
+
+                    if response[ IH.VIEW_PARAM_SHIP_SUNK ]:
+                        function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] += f"\nShip of size { response[ IH.VIEW_PARAM_SIZE ] } was sunk!"
+
+                    # If the result of the attack ended the opponent
+                    # Indicate that you won the game!
+                    if response[ IH.VIEW_PARAM_WIN ]:
+                        connection.close_connection()
+                        game_over = True
+                        win = True
                 # Make it so the opponent is now the active player
                 turn = opponent_type
 
