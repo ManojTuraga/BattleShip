@@ -31,26 +31,6 @@ import json
 ################################################################################
 # Procedures
 ################################################################################
-def get_ending_coordinate( start_coordinate, dir, amount : IH.SystemCoordType ) -> IH.SystemCoordType:
-    """
-    Function: Get Ending Coordinate
-
-    Inputs: Starting coordinate, calulation direction, amount to move
-    Output: Ending Coordinate
-
-    Description: This is a helper function that computes the predicted
-                 ending coordinate given a starting coordinate and
-                 the orientation of ship with the size of the ship
-    """
-    # Depending on the direction passed, compute the ending
-    # coordinate by subtracting the amount from the a particular
-    # index in the starting coordinate
-    if dir == "V":
-        return ( start_coordinate[ 0 ] - amount + 1, start_coordinate[ 1 ] )
-    
-    if dir == "H":
-        return ( start_coordinate[ 0 ], start_coordinate[ 1 ] - amount + 1 )
-
 
 def main():
     """
@@ -68,6 +48,7 @@ def main():
     # well as the variable to hold the connection state
     model = GM.GameModel()
     presenter = GP.GamePresenter( GV.GameView() )
+    ai_opponent = None
     connection = None
     # The host player will always have the first move
     # Suggest improvement, make RNG?
@@ -80,7 +61,7 @@ def main():
     # Initialize variables to store the type of player and the
     # opponent are
     player_type = IH.PlayerTypeEnum.PLAYER_TYPE_HOST
-    oppenent_type = IH.PlayerTypeEnum.PLAYER_TYPE_HOST
+    opponent_type = IH.PlayerTypeEnum.PLAYER_TYPE_HOST
     # Trigger the initialization event of the presenter to
     # obtain configuration related items, including the number
     # of ships and whether the player is a host or joining player
@@ -92,25 +73,22 @@ def main():
     # player
 
     if player_type == IH.PlayerTypeEnum.PLAYER_TYPE_JOIN:
-        oppenent_type = IH.PlayerTypeEnum.PLAYER_TYPE_HOST
+        opponent_type = IH.PlayerTypeEnum.PLAYER_TYPE_HOST
         connection = GC.Client()
     else:
-        oppenent_type = IH.PlayerTypeEnum.PLAYER_TYPE_JOIN
+        opponent_type = IH.PlayerTypeEnum.PLAYER_TYPE_JOIN
         connection = GH.Host()
         # Prompt for AI selection
         function_returns = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_AI_SELECTION, {})
         ai_selection = function_returns[IH.VIEW_PARAM_AI_SELECTION]
-
-
 
         if ai_selection:
             # Prompt for AI difficulty
             function_returns = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_AI_DIFFICULTY, {})
             ai_difficulty = function_returns[IH.VIEW_PARAM_AI_DIFFICULTY]
             # function_parameters[IH.VIEW_PARAM_AI_DIFFICULTY] = ai_difficulty
-            ai_opponent = AI(ai_difficulty, number_of_ships)
-            ai_opponent.place_ships()
-            opponent_type = IH.PlayerTypeEnum.PLAYER_TYPE_AI
+            ai_opponent = AI(ai_difficulty, number_of_ships, player_type)
+            ai_opponent.place_ships(model, player_type)
     # Initially set the error state of the view to be false
     # as well as setting the initial size of the ship to be
     # the minimum possible number of ships
@@ -127,7 +105,7 @@ def main():
         # player and opponent as inputs into the presenter
         function_parameters[ IH.VIEW_PARAM_SIZE ] = size
         function_parameters[ IH.VIEW_PARAM_BOARD ] = model.get_visual_board( player_type )
-        function_parameters[ IH.VIEW_PARAM_OPPONENT_BOARD ] = model.get_visual_board( oppenent_type )
+        function_parameters[ IH.VIEW_PARAM_OPPONENT_BOARD ] = model.get_visual_board( opponent_type )
         function_parameters[ IH.VIEW_PARAM_DIRECTION ] = direction
         function_parameters[ IH.VIEW_PARAM_ROW ] = row
         function_parameters[ IH.VIEW_PARAM_COL ] = col
@@ -141,19 +119,11 @@ def main():
         direction = return_val[ IH.VIEW_PARAM_DIRECTION ]
         row = return_val[ IH.VIEW_PARAM_ROW ]
         col = return_val[ IH.VIEW_PARAM_COL ]
-        start_coordinate = ( row, col )
         
-        # Convert the coordinate returned by the presenter
-        # into system coordinates and compute the ending coordinate
-        # based on the values returned by configuration
-        start_coordinate_sys = ( IH.PLACEMENT_ROW_TO_SYS_ROW[ start_coordinate[ IH.ROW_INDEX ] ], IH.PLACEMENT_COL_TO_SYS_COL[ start_coordinate[ IH.COLUMN_INDEX ] ] )
-        end_coordinate_sys = get_ending_coordinate( start_coordinate_sys, direction, size )
-        # Here we are creating a set of all the coordinates
-        # that the ship is predicted to take, We use a set
-        # to make sure that there are no repeat coordinates
-        boat_coords = { ( row, col ) 
-                        for row in range( start_coordinate_sys[ IH.ROW_INDEX ], end_coordinate_sys[ IH.ROW_INDEX ] - 1, -1 )
-                        for col in range( start_coordinate_sys[ IH.COLUMN_INDEX ], end_coordinate_sys[ IH.COLUMN_INDEX ] - 1, -1 ) }
+        boat_coords = IH.boat_coords([
+            IH.PLACEMENT_ROW_TO_SYS_ROW[ row ], 
+            IH.PLACEMENT_COL_TO_SYS_COL[ col ]
+        ], direction, size)
         # If we find that at least one of the coordinates
         # is not a valid coordinate, we will trigger the error
         # state in the presenter
@@ -171,19 +141,17 @@ def main():
             # Increment the size only if we are able to
             # successfully place a ship
             size += 1
-   # if opponent_type == IH.PlayerTypeEnum.PLAYER_TYPE_AI:
-      #  ai_opponent.place_ships()
     # Re initialize function parameters to have the most
     # up to date data remove any messages that could
     # have been triggered due to previous steps
     function_parameters[ IH.VIEW_PARAM_BOARD ] = model.get_visual_board( player_type )
-    function_parameters[ IH.VIEW_PARAM_OPPONENT_BOARD ] = model.get_visual_board( oppenent_type )
+    function_parameters[ IH.VIEW_PARAM_OPPONENT_BOARD ] = model.get_visual_board( opponent_type )
     function_parameters[ IH.VIEW_PARAM_IS_ERROR_STATE ] = False
     function_parameters[ IH.VIEW_PARAM_STATE_MESSAGE ] = None
     # Trigger the presenter to display the wait page
     # as well as open the network connection
 
-    if opponent_type != IH.PlayerTypeEnum.PLAYER_TYPE_AI:
+    if not ai_opponent:
         presenter.trigger_view_event( IH.GameEventType.GAME_EVENT_WAIT_FOR_OPPONENT, function_parameters )
         connection.open_connection()
     # Initialize a variable to handle whether
@@ -200,10 +168,9 @@ def main():
         # The following code logic is executed if it is not
         # the current player's turn
         if player_type != turn:
-            if opponent_type == IH.PlayerTypeEnum.PLAYER_TYPE_AI:
-                attack_coord = ai_opponent.make_attack()
-                row, col = attack_coord
-                cell = model.get_coord(player_type, (row, col))
+            if ai_opponent:
+                attack_coord = ai_opponent.make_attack(model, player_type)
+                cell = model.get_coord(player_type, attack_coord)
                 # If the coordinate is a ship coordinate, and it is not hit already,
                 # make sure that it is in the hit state. Otherwise, the opponent missed
                 if cell[IH.GAME_COORD_TYPE_ID_INDEX] > IH.BASE_CELL and cell[IH.GAME_COORD_TYPE_STATE_INDEX] != IH.CoordStateType.COORD_STATE_HIT:
@@ -213,13 +180,11 @@ def main():
                     cell[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_MISS
                     function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = "Miss!"
 
-                model.update_coord(player_type, (row, col), cell)
+                model.update_coord(player_type, attack_coord, cell)
                 # Determine if the result of this attack caused the opponent to win
                 if not model.ships_are_alive(player_type):
                     game_over = True
                     win = False
-                # Update the AI's knowledge of the opponent's board
-                ai_opponent.update_opponent_board((row, col), cell[IH.GAME_COORD_TYPE_STATE_INDEX])
                 # Make it so the user is now the active player
                 turn = player_type
 
@@ -255,7 +220,7 @@ def main():
                 response[IH.VIEW_PARAM_WIN] = not model.ships_are_alive(player_type)
                 response[IH.VIEW_PARAM_SHIP_SUNK] = not model.ship_is_alive(player_type, cell[IH.GAME_COORD_TYPE_ID_INDEX])
                 response[IH.VIEW_PARAM_SIZE] = cell[IH.GAME_COORD_TYPE_ID_INDEX]
-                #connection.send_message(json.dumps(response))
+                connection.send_message(json.dumps(response))
                 
                 # Update the state message to allow the presenter to display this
                 # message on the next page load
@@ -275,72 +240,40 @@ def main():
                     win = False
 
         else:
-            if opponent_type == IH.PlayerTypeEnum.PLAYER_TYPE_AI:  # Replace this with your actual condition to check for AI
-                # Trigger the presenter to display the attack page
-                # Player's turn to attack
-                function_parameters[IH.VIEW_PARAM_ROW] = row
-                function_parameters[IH.VIEW_PARAM_COL] = col
-                while True:
-                    function_parameters[IH.VIEW_PARAM_ROW] = row
-                    function_parameters[IH.VIEW_PARAM_COL] = col
-                    attack = None
-                    attack = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_MAKE_ATTACK, function_parameters)
-                    row, col = attack[IH.VIEW_PARAM_ROW], attack[IH.VIEW_PARAM_COL]
-                    attack_sys = (IH.PLACEMENT_ROW_TO_SYS_ROW[row], IH.PLACEMENT_COL_TO_SYS_COL[col])
+            # Trigger the presenter to display the attack page
+            attack = None
 
-                    if ai_opponent.is_valid_coord(attack_sys):
-                        if attack[IH.VIEW_PARAM_PLACE_SHIP]:
-                            if opponent_type == IH.PlayerTypeEnum.PLAYER_TYPE_AI:
-                                # Player attacks AI
-                                hit_result = ai_opponent.check_ship_at(attack_sys)  # Check if there's a ship at the attack coordinates
-                                if hit_result == 1:
-                                    result_state = IH.CoordStateType.COORD_STATE_HIT
-                                    function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = f"You hit AI's ship at {attack_sys}!"
-                                    break
-                                else:
-                                    result_state= IH.CoordStateType.COORD_STATE_MISS
-                                    function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = f"You missed at {attack_sys}."
-                                    break
+            function_parameters[IH.VIEW_PARAM_ROW] = row
+            function_parameters[IH.VIEW_PARAM_COL] = col
+            attack = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_MAKE_ATTACK, function_parameters)
+            row = attack[IH.VIEW_PARAM_ROW]
+            col = attack[IH.VIEW_PARAM_COL]
+            # Remove any messages or errors that are currently displayed on the page
+            function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = None
+            function_parameters[IH.VIEW_PARAM_IS_ERROR_STATE] = False
+            # Get the system coordinates from the attack
+            attack_sys = (IH.PLACEMENT_ROW_TO_SYS_ROW[attack[IH.VIEW_PARAM_ROW]], IH.PLACEMENT_COL_TO_SYS_COL[attack[IH.VIEW_PARAM_COL]])
+            # Check if the user wants to place attack at this location
+            if attack[ IH.VIEW_PARAM_PLACE_SHIP ]:
+                # The following block of code is only executed if the attack is valid
+                if not model.is_valid_coord(opponent_type, attack_sys, IH.GameEventType.GAME_EVENT_MAKE_ATTACK):
+                    function_parameters[IH.VIEW_PARAM_IS_ERROR_STATE] = True
+                    continue
+                cell = model.get_coord(opponent_type, attack_sys)
+                if cell[IH.GAME_COORD_TYPE_ID_INDEX] > IH.BASE_CELL and cell[IH.GAME_COORD_TYPE_STATE_INDEX] != IH.CoordStateType.COORD_STATE_HIT:
+                    cell[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_HIT
+                    function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = "Hit!"
+                else:
+                    cell[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_MISS
+                    function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = "Miss!"
 
-                ai_opponent.update_coord(attack_sys, IH.CoordStateType.COORD_STATE_HIT, is_opponent=True)
-
-                ai_opponent.update_ai_board((row, col), result_state)
-                # Check if the AI has any ships left
-                if not ai_opponent.ships_are_alive():
+                model.update_coord(opponent_type, attack_sys, cell)
+                # Determine if the result of this attack caused the opponent to win
+                if not model.ships_are_alive(opponent_type):
                     game_over = True
                     win = True
-                
 
-            else:
-                # Trigger the presenter to display the attack page
-                attack = None
-                
-
-                function_parameters[IH.VIEW_PARAM_ROW] = row
-                function_parameters[IH.VIEW_PARAM_COL] = col
-                attack = presenter.trigger_view_event(IH.GameEventType.GAME_EVENT_MAKE_ATTACK, function_parameters)
-                row = attack[IH.VIEW_PARAM_ROW]
-                col = attack[IH.VIEW_PARAM_COL]
-                # Remove any messages or errors that are currently displayed on the page
-                function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = None
-                function_parameters[IH.VIEW_PARAM_IS_ERROR_STATE] = False
-                # Get the system coordinates from the attack
-                attack_sys = (IH.PLACEMENT_ROW_TO_SYS_ROW[attack[IH.VIEW_PARAM_ROW]], IH.PLACEMENT_COL_TO_SYS_COL[attack[IH.VIEW_PARAM_COL]])
-                # The following block of code is only executed if the attack is valid
-                if model.is_valid_coord(opponent_type, attack_sys, IH.GameEventType.GAME_EVENT_MAKE_ATTACK):
-                    cell = model.get_coord(opponent_type, attack_sys)
-                    if cell[IH.GAME_COORD_TYPE_ID_INDEX] > IH.BASE_CELL and cell[IH.GAME_COORD_TYPE_STATE_INDEX] != IH.CoordStateType.COORD_STATE_HIT:
-                        cell[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_HIT
-                        function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = "Hit!"
-                    else:
-                        cell[IH.GAME_COORD_TYPE_STATE_INDEX] = IH.CoordStateType.COORD_STATE_MISS
-                        function_parameters[IH.VIEW_PARAM_STATE_MESSAGE] = "Miss!"
-
-                    model.update_coord(opponent_type, attack_sys, cell)
-                    # Determine if the result of this attack caused the opponent to win
-                    if not model.ships_are_alive(opponent_type):
-                        game_over = True
-                        win = True
+                if not ai_opponent: # Only send the attack result if we are playing against a remote player
                     # Send the attack result to the opponent
                     response = {
                         IH.VIEW_PARAM_ROW: attack[IH.VIEW_PARAM_ROW],
@@ -352,11 +285,9 @@ def main():
                     }
 
                     connection.send_message(json.dumps(response)) 
-                    # Make it so the opponent is now the active player
-                    turn = opponent_type
+                # Make it so the opponent is now the active player
+                turn = opponent_type
 
-                else:
-                    function_parameters[IH.VIEW_PARAM_IS_ERROR_STATE] = True
 
     else:
         # Once the Game is over, display the game over page

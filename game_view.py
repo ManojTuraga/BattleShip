@@ -533,7 +533,7 @@ class GameView( IGV.GameViewInterface ):
         opponents_board = "Opponent's Board"
         self.try_addstr( 3, self.get_centered_position([len(opponents_board), 1])[0], opponents_board, curses.color_pair(TITLE_COLOR_PAIR) )
 
-        self.print_board(opponent_board, self.opponent_board_position())
+        self.print_board(opponent_board, self.opponent_board_position(), False)
 
         your_board = "Your Board"
         self.try_addstr( 8*2+1, self.get_centered_position([len(your_board), 1])[0], your_board, curses.color_pair(TITLE_COLOR_PAIR) )
@@ -577,7 +577,7 @@ class GameView( IGV.GameViewInterface ):
         board_position = self.opponent_board_position()
         return [row_index + board_position[0] + 1, col_index * 2 + board_position[1] + 3]
 
-    def print_board( self, board: list[list], position: tuple[int, int] ):
+    def print_board( self, board: list[list], position: tuple[int, int], show_ships: bool = True ):
         # Print the columns
         for [x, col] in enumerate(IH.PLACEMENT_COL_TO_SYS_COL.keys()):
             self.try_addstr(position[0], position[1] + 3 + x*2, f"{col}")
@@ -589,7 +589,10 @@ class GameView( IGV.GameViewInterface ):
             for x in range(len(board[y])):
                 pos = [position[0] + 1 + y, position[1] + 3 + x * 2]
                 if board[ y ][ x ] > IH.BASE_CELL:
-                    self.try_addstr(pos[0], pos[1], 'S')
+                    if show_ships:
+                        self.try_addstr(pos[0], pos[1], 'S')
+                    else:
+                        self.try_addstr(pos[0], pos[1], '~')
 
                 elif board[ y ][ x ] == IH.BASE_CELL:
                     self.try_addstr(pos[0], pos[1], '~')

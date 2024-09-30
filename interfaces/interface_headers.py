@@ -108,7 +108,6 @@ MISSED_CELL = -2
 class PlayerTypeEnum( Enum ):
     PLAYER_TYPE_HOST = 0
     PLAYER_TYPE_JOIN = 1
-    PLAYER_TYPE_AI = 2
 
 # This type is used to determine the state of the
 # coordinate
@@ -142,4 +141,40 @@ GameBoardType = list[ list[ GameCoordType ] ]
 VisualBoardType = list[ list[ int ] ]
 
 
+def get_ending_coordinate( start_coordinate, dir, amount : SystemCoordType ) -> SystemCoordType:
+    """
+    Function: Get Ending Coordinate
+
+    Inputs: Starting coordinate, calulation direction, amount to move
+    Output: Ending Coordinate
+
+    Description: This is a helper function that computes the predicted
+                 ending coordinate given a starting coordinate and
+                 the orientation of ship with the size of the ship
+    """
+    # Depending on the direction passed, compute the ending
+    # coordinate by subtracting the amount from the a particular
+    # index in the starting coordinate
+    if dir == "V":
+        return ( start_coordinate[ 0 ] - amount + 1, start_coordinate[ 1 ] )
+    
+    if dir == "H":
+        return ( start_coordinate[ 0 ], start_coordinate[ 1 ] - amount + 1 )
+
+
+# Here we are creating a set of all the coordinates
+# that the ship is predicted to take, We use a set
+# to make sure that there are no repeat coordinates
+def boat_coords(start_coordinate: tuple[int, int], direction, size): 
+    # Convert the coordinate returned by the presenter
+    # into system coordinates and compute the ending coordinate
+    # based on the values returned by configuration
+    start_coordinate_sys = (  start_coordinate[ ROW_INDEX ], start_coordinate[ COLUMN_INDEX ] ) 
+    end_coordinate_sys = get_ending_coordinate( start_coordinate_sys, direction, size )
+    # Here we are creating a set of all the coordinates
+    # that the ship is predicted to take, We use a set
+    # to make sure that there are no repeat coordinates
+    return { ( row, col ) 
+                for row in range( start_coordinate_sys[ ROW_INDEX ], end_coordinate_sys[ ROW_INDEX ] - 1, -1 )
+                for col in range( start_coordinate_sys[ COLUMN_INDEX ], end_coordinate_sys[ COLUMN_INDEX ] - 1, -1 ) }
 
