@@ -263,18 +263,7 @@ class GameView( IGV.GameViewInterface ):
                     ship_index = int(curses.keyname(key)) - 1
                 except:
                     pass
-            
 
-            key = self._screen.getch()
-            if key == curses.KEY_ENTER or key == 10:
-                config_dict[IH.VIEW_PARAM_NUM_OF_SHIPS] = ship_index
-                break
-            elif key == curses.KEY_UP:
-                ship_index = (ship_index - 1) % (IH.MAX_NUM_OF_SHIPS + 1)
-            elif key == curses.KEY_DOWN:
-                ship_index = (ship_index + 1) % (IH.MAX_NUM_OF_SHIPS + 1)
-
-        
         # Return the configurations once all the required
         # configurations have been generated
         return config_dict
